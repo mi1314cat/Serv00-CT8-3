@@ -3,7 +3,7 @@ name: Execute SSH Commands
 on:
   workflow_dispatch: # 手动触发工作流
   schedule:
-    - cron: "30 1,13 * * *"  # 每天早晚9点运行一次
+    - cron: "30 1,13 * * *"  # 每天早晚1点运行一次
 
 jobs:
   execute-commands:
@@ -18,7 +18,6 @@ jobs:
           echo "$ACCOUNTS_JSON" > accounts.json
         env:
           ACCOUNTS_JSON: ${{ secrets.ACCOUNTS_JSON }}
-        # 从 GitHub Secrets 获取 ACCOUNTS_JSON 变量，并保存到文件 accounts.json
 
       - name: Generate SSH Commands
         id: generate-ssh-commands
@@ -29,7 +28,7 @@ jobs:
             password=$(echo "$account" | jq -r '.password')
             ssh=$(echo "$account" | jq -r '.ssh')
             echo "echo \"Executing for $username@$ssh\"" >> sshpass.sh
-            echo "sshpass -p '$password' ssh -o StrictHostKeyChecking=no '$username@$ssh' 'bash <(curl -s https://raw.githubusercontent.com/gshtwy/socks5-hysteria2-for-serv00/main/crtest.sh)'" >> sshpass.sh
+            echo "sshpass -p '$password' ssh -o StrictHostKeyChecking=no '$username@$ssh' 'bash <(curl -s https://raw.githubusercontent.com/gshtwy/socks5-hysteria2-for-serv00/main/crtest.sh)' || { echo \"Failed to execute command for $username@$ssh\"; exit 1; }" >> sshpass.sh
           done < <(jq -c '.[]' accounts.json)
           chmod +x sshpass.sh
 
